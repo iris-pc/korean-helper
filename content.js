@@ -53,6 +53,13 @@
     .loading, .err { padding: 6px 0 12px; color: #787774; }
     .err { color: #c4554d; }
     .err a { color: #2383e2; cursor: pointer; text-decoration: underline; }
+    .ask-wrap { padding: 10px 0 14px; text-align: center; }
+    .ask-hint { font-size: 12px; color: #9b9a97; margin-bottom: 8px; }
+    .ask-btn {
+      display: block; width: 100%; cursor: pointer; border: 0; background: #2383e2; color: #fff;
+      border-radius: 6px; padding: 8px 0; font-size: 14px; font-weight: 600; font-family: inherit;
+    }
+    .ask-btn:hover { background: #1b74c9; }
     .dot { display:inline-block; width:6px; height:6px; margin-right:4px; border-radius:50%; background:#9b9a97; animation: b 1s infinite ease-in-out; }
     .dot:nth-child(2){ animation-delay:.15s } .dot:nth-child(3){ animation-delay:.3s }
     @keyframes b { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
@@ -117,9 +124,6 @@
     hd.appendChild(x);
 
     const bd = h('div', 'bd');
-    const loading = h('div', 'loading');
-    loading.append(h('span', 'dot'), h('span', 'dot'), h('span', 'dot'), document.createTextNode(' AI 解析中'));
-    bd.appendChild(loading);
 
     const ft = h('div', 'ft');
     const bVocab = h('button', 'btn primary', '＋ 加入生词本');
@@ -152,11 +156,28 @@
       bindSave(bVocab, bNote, text, context, resp.data);
     };
 
+    // 点按「AI 解析」后才真正发起请求；期间弹窗可能已被关闭/替换，需校验标识符
+    const startAsk = () => {
+      if (myId !== reqId) return;
+      bd.textContent = '';
+      const loading = h('div', 'loading');
+      loading.append(h('span', 'dot'), h('span', 'dot'), h('span', 'dot'), document.createTextNode(' AI 解析中'));
+      bd.appendChild(loading);
+      chrome.runtime.sendMessage({ type: 'ask', text, context }, done);
+    };
+
     const cached = cache.get(text + '||' + context);
     if (cached) {
+      // 缓存命中不消耗 API，直接展示
       done({ ok: true, data: cached });
     } else {
-      chrome.runtime.sendMessage({ type: 'ask', text, context }, done);
+      // 未命中：先显示确认按钮，避免双击/三击误触浪费 API 调用
+      const wrap = h('div', 'ask-wrap');
+      wrap.appendChild(h('div', 'ask-hint', '确认后才会调用 AI，防止误触'));
+      const bAsk = h('button', 'ask-btn', 'AI 解析');
+      bAsk.onclick = startAsk;
+      wrap.appendChild(bAsk);
+      bd.appendChild(wrap);
     }
   }
 
