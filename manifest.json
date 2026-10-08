@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "韩语阅读助手",
+  "version": "1.2.1",
+  "description": "划词/双击解析韩语单词与语法，支持生词本、语法笔记本及 Notion 风格 PDF 导出",
+  "permissions": [
+    "storage",
+    "webRequest",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "https://api.deepseek.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "打开生词本 / 笔记本",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

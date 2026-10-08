@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>导出</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: #37352f; background: #fff;
+      font-family: -apple-system, "Segoe UI", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo",
+                   "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; line-height: 1.6;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .toolbar {
+      position: sticky; top: 0; background: #f7f6f3; border-bottom: 1px solid #e9e9e7;
+      padding: 10px 24px; display: flex; gap: 14px; align-items: center; font-size: 13px; color: #787774;
+    }
+    .toolbar button {
+      font: inherit; background: #2383e2; color: #fff; border: 0; border-radius: 6px; padding: 5px 14px; cursor: pointer;
+    }
+    .doc { max-width: 800px; margin: 0 auto; padding: 36px 24px 60px; }
+    h1 { font-size: 36px; font-weight: 700; margin: 0 0 4px; }
+    .meta { color: #9b9a97; font-size: 13px; margin-bottom: 24px; }
+
+    /* 生词本表格 */
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    thead { display: table-header-group; }
+    th, td { border: 1px solid #e9e9e7; padding: 7px 10px; text-align: left; vertical-align: middle; word-break: break-word; }
+    th { background: #f7f6f3; color: #787774; font-weight: 500; font-size: 13px; height: 32px; }
+    td { font-size: 15px; height: 38px; }
+    td.ko { font-weight: 600; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+
+    /* 笔记本 */
+    /* 笔记连续排版：条目之间不强制换页，只避免把小块内容拦腰截断 */
+    .entry { padding: 12px 0; border-bottom: 1px solid #e9e9e7; }
+    .entry:last-child { border-bottom: 0; }
+    .entry h2 { font-size: 20px; margin: 0 0 4px; line-height: 1.4; break-after: avoid; page-break-after: avoid; }
+    .tags { margin-bottom: 8px; }
+    .tag { display: inline-block; background: #f1f1ef; color: #5f5e5b; border-radius: 4px; padding: 0 6px; font-size: 12px; margin-right: 6px; }
+    .tag.blue { background: #e7f3f8; color: #1f6c8a; }
+    .callout { background: #f7f6f3; border-radius: 6px; padding: 6px 12px; margin: 6px 0; font-weight: 600; break-inside: avoid; page-break-inside: avoid; }
+    .label { color: #9b9a97; font-size: 12px; margin-top: 8px; break-after: avoid; page-break-after: avoid; }
+    .tags { break-after: avoid; page-break-after: avoid; }
+    .entry p { margin: 2px 0; }
+    ul { margin: 4px 0; padding-left: 22px; }
+    li { margin: 3px 0; break-inside: avoid; page-break-inside: avoid; }
+    li b { color: #c4554d; }
+    .sub { color: #787774; font-size: 13px; }
+    table.bk { margin: 4px 0 6px; }
+    table.bk td { height: auto; font-size: 14px; padding: 4px 10px; line-height: 1.5; }
+    .bk-note { font-size: 12.5px; color: #c4554d; background: #fbf3f2; border-radius: 4px; padding: 1px 6px; margin-top: 2px; display: inline-block; }
+    table.bk td.bk-ko { width: 28%; font-weight: 700; color: #2383e2; }
+    .ctx { border-left: 3px solid #37352f; padding-left: 10px; color: #5f5e5b; margin: 8px 0; }
+
+    @media print { .toolbar { display: none; } .doc { padding: 0; max-width: none; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="print">打印 / 保存为 PDF</button>
+    <span>目标打印机选择“另存为 PDF”，建议取消勾选“页眉和页脚”，勾选“背景图形”以保留表头底色。</span>
+  </div>
+  <div class="doc" id="doc"></div>
+  <script src="export.js"></script>
+</body>
+</html>

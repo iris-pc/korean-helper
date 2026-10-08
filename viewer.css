@@ -1,0 +1,63 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: #f1f1ef; color: #37352f;
+  font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Malgun Gothic", sans-serif;
+}
+
+#bar {
+  position: sticky; top: 0; z-index: 100; height: 44px;
+  display: flex; align-items: center; gap: 8px; padding: 0 16px;
+  background: #fff; border-bottom: 1px solid #e9e9e7;
+}
+#bar .grow { flex: 1; }
+#title { font-weight: 600; max-width: 45vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#bar button {
+  font: inherit; border: 1px solid #e0e0de; background: #fff; border-radius: 6px;
+  padding: 3px 10px; cursor: pointer; color: inherit;
+}
+#bar button:hover { background: #f1f1ef; }
+#zoomLabel, #pageInfo { color: #787774; min-width: 48px; text-align: center; }
+
+#status { text-align: center; color: #787774; padding: 40px 16px; display: none; }
+#status.err { color: #c4554d; }
+#status button { margin-top: 12px; font: inherit; padding: 5px 14px; border-radius: 6px; border: 1px solid #2383e2; background: #2383e2; color: #fff; cursor: pointer; }
+#drop {
+  display: none; margin: 80px auto; max-width: 520px; padding: 60px 24px; text-align: center;
+  border: 2px dashed #c9c9c6; border-radius: 12px; color: #787774; background: #fff;
+}
+body.dragging #drop { border-color: #2e9e5b; color: #2e9e5b; }
+
+#pages { padding: 12px 0 40px; }
+.page {
+  position: relative; margin: 0 auto 12px; background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 15, 15, .15);
+}
+.page canvas { display: block; }
+
+/* ---- 文字层（摘自 PDF.js，使文字可选中） ---- */
+.textLayer {
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+  position: absolute; text-align: initial; inset: 0; overflow: clip; opacity: 1; line-height: 1;
+  text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 0;
+}
+.textLayer :is(span, br) {
+  color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%;
+}
+.textLayer > :not(.markedContent), .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.textLayer .markedContent { display: contents; }
+.textLayer ::selection { background: rgba(35, 131, 226, .3); }
+.textLayer br::selection { background: transparent; }
+.textLayer .endOfContent {
+  display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; user-select: none;
+}
+.textLayer.selecting .endOfContent { top: 0; }

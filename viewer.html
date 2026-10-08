@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF 阅读器 · 韩语阅读助手</title>
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <div id="bar">
+    <span id="title">PDF 阅读器</span>
+    <span class="grow"></span>
+    <button id="zoomOut" title="缩小">−</button>
+    <span id="zoomLabel">100%</span>
+    <button id="zoomIn" title="放大">＋</button>
+    <button id="fit" title="适应宽度">适应宽度</button>
+    <span id="pageInfo"></span>
+    <button id="openLocal">打开本地 PDF</button>
+    <input id="file" type="file" accept="application/pdf,.pdf" hidden>
+  </div>
+
+  <div id="status"></div>
+  <div id="drop"><div>把 PDF 文件拖到这里，或点击上方“打开本地 PDF”</div></div>
+  <div id="pages"></div>
+
+  <!-- 复用网页里的取词悬浮窗脚本 -->
+  <script src="content.js"></script>
+  <script type="module" src="viewer.js"></script>
+</body>
+</html>

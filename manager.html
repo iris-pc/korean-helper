@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>韩语阅读助手</title>
+  <link rel="stylesheet" href="manager.css">
+</head>
+<body>
+  <div class="page">
+    <h1>🇰🇷 韩语阅读助手</h1>
+    <nav class="tabs">
+      <button data-tab="vocab" class="active">生词本 <span id="cVocab" class="count"></span></button>
+      <button data-tab="notes">笔记本 <span id="cNotes" class="count"></span></button>
+      <button data-tab="settings">设置</button>
+    </nav>
+
+    <!-- 生词本 -->
+    <section id="tab-vocab" class="panel active">
+      <div class="toolbar">
+        <label>导出排列：
+          <select id="vocabCols">
+            <option value="2">2 列（韩文｜中文）</option>
+            <option value="4">4 列（韩文｜空白｜中文｜空白）</option>
+          </select>
+        </label>
+        <button id="exportVocab" class="btn primary">导出 PDF</button>
+        <button id="clearVocab" class="btn danger">清空</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>韩文</th><th>中文</th><th>词性</th><th>例句</th><th></th></tr></thead>
+        <tbody id="vocabBody"></tbody>
+      </table>
+      <div id="vocabEmpty" class="empty">还没有生词。阅读韩文时选中单词，在悬浮窗里点“加入生词本”。</div>
+    </section>
+
+    <!-- 笔记本 -->
+    <section id="tab-notes" class="panel">
+      <div class="toolbar">
+        <button id="exportNotes" class="btn primary">导出 PDF</button>
+        <button id="clearNotes" class="btn danger">清空</button>
+      </div>
+      <div id="notesList"></div>
+      <div id="notesEmpty" class="empty">还没有笔记。选中句子或词语，在悬浮窗里点“加入笔记本”。</div>
+    </section>
+
+    <!-- 设置 -->
+    <section id="tab-settings" class="panel">
+      <div class="form">
+        <label>AI 服务商
+          <select id="provider">
+            <option value="deepseek">DeepSeek</option>
+            <option value="openai">OpenAI (ChatGPT)</option>
+            <option value="custom">自定义（OpenAI 兼容接口）</option>
+          </select>
+        </label>
+        <label>API Key
+          <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off">
+        </label>
+        <label>模型（留空使用默认：DeepSeek → deepseek-chat，OpenAI → gpt-4o-mini）
+          <input id="model" type="text" placeholder="deepseek-chat / gpt-4o-mini">
+        </label>
+        <label>自定义 Base URL（可选，用于中转/代理，如 https://xxx.com/v1）
+          <input id="baseUrl" type="text" placeholder="https://your-proxy.com/v1">
+        </label>
+        <label class="check">
+          <span><input id="autoPdf" type="checkbox"> 自动用本插件打开浏览器里的 PDF（开启后可直接在 PDF 里划词）</span>
+          <small>开启时浏览器会请求访问所有网站的权限，用来识别并读取 PDF；插件不会收集你的浏览数据。<br>
+          也可以不开启：在 PDF 页面点击插件图标即可手动切换，或 <a id="openViewer" href="viewer.html" target="_blank">打开 PDF 阅读器</a> 后拖入本地文件。</small>
+        </label>
+        <div class="row">
+          <button id="save" class="btn primary">保存</button>
+          <button id="test" class="btn">测试连接</button>
+          <span id="msg" class="msg"></span>
+        </div>
+        <p class="hint">API Key 仅保存在你本机浏览器的扩展存储中，只会发送给你选择的服务商。</p>
+      </div>
+    </section>
+  </div>
+  <script src="manager.js"></script>
+</body>
+</html>
