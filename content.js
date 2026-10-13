@@ -9,6 +9,9 @@
   let shadow = null;
   let lastText = '';
   let reqId = 0;
+  let iconHost = null; // 选区旁悬浮的插件图标
+  let pending = null; // 图标对应的选区内容 { rect, text, context }
+  const ICON_SIZE = 30;
 
   const CSS = `
     :host { all: initial; }
@@ -53,17 +56,36 @@
     .loading, .err { padding: 6px 0 12px; color: #787774; }
     .err { color: #c4554d; }
     .err a { color: #2383e2; cursor: pointer; text-decoration: underline; }
-    .ask-wrap { padding: 10px 0 14px; text-align: center; }
-    .ask-hint { font-size: 12px; color: #9b9a97; margin-bottom: 8px; }
-    .ask-btn {
-      display: block; width: 100%; cursor: pointer; border: 0; background: #2383e2; color: #fff;
-      border-radius: 6px; padding: 8px 0; font-size: 14px; font-weight: 600; font-family: inherit;
-    }
-    .ask-btn:hover { background: #1b74c9; }
     .dot { display:inline-block; width:6px; height:6px; margin-right:4px; border-radius:50%; background:#9b9a97; animation: b 1s infinite ease-in-out; }
     .dot:nth-child(2){ animation-delay:.15s } .dot:nth-child(3){ animation-delay:.3s }
     @keyframes b { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
   `;
+
+  // 选区右上角悬浮的插件图标（样式同样用 Shadow DOM 隔离）
+  const ICON_CSS = `
+    :host { all: initial; }
+    .krh-btn {
+      display: block; width: 30px; height: 30px; padding: 3px; box-sizing: border-box;
+      cursor: pointer; background: #fff; border: 1px solid #e0e0de; border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(15,15,15,.18), 0 0 0 1px rgba(15,15,15,.04);
+      transition: background .12s, transform .12s, box-shadow .12s;
+      animation: krh-in .12s ease-out;
+    }
+    .krh-btn:hover { background: #f1f1ef; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15,15,15,.22); }
+    .krh-btn:active { transform: translateY(0); }
+    .krh-btn svg { display: block; width: 100%; height: 100%; }
+    @keyframes krh-in { from { opacity: 0; transform: scale(.75); } to { opacity: 1; transform: scale(1); } }
+  `;
+
+  // 与 icons/icon.svg 同一份矢量图标，内联以免额外声明 web_accessible_resources
+  const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+    <rect width="180" height="180" rx="40" fill="#2E9E5B"/>
+    <circle cx="78" cy="78" r="62" fill="#14532D" stroke="#FFFFFF" stroke-width="10"/>
+    <line x1="124" y1="124" x2="155" y2="155" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round"/>
+    <path fill="#BBF7D0" d="M48.05 58.34V66H32.83V88.31H38.11V85.89H48.05V99.66H53.64V85.89H63.63V88.09H69.17V66H53.64V58.34ZM38.11 80.69V71.19H48.05V80.69ZM63.63 80.69H53.64V71.19H63.63Z"/>
+    <path fill="#BBF7D0" d="M100.25 69.3C94.39 69.3 90.21 72.51 90.21 77.13C90.21 81.84 94.39 85.01 100.25 85.01C106.1 85.01 110.28 81.84 110.28 77.13C110.28 72.51 106.1 69.3 100.25 69.3ZM100.25 73.74C102.84 73.74 104.65 74.93 104.65 77.13C104.65 79.37 102.84 80.56 100.25 80.56C97.65 80.56 95.85 79.37 95.85 77.13C95.85 74.93 97.65 73.74 100.25 73.74ZM114.46 59V89.45H120.31V76.25H125.72V71.41H120.31V59ZM97.34 58.96V63.27H88.28V67.85H112.21V63.27H103.15V58.96ZM94.04 87.16V99.04H121.76V94.33H99.94V87.16Z"/>
+    <line x1="85" y1="54" x2="74" y2="104" stroke="#4ADE80" stroke-width="4.5" stroke-linecap="round"/>
+  </svg>`;
 
   function h(tag, cls, text) {
     const e = document.createElement(tag);
@@ -78,6 +100,53 @@
     if (host) host.remove();
     host = null;
     shadow = null;
+  }
+
+  function closeIcon() {
+    if (iconHost) iconHost.remove();
+    iconHost = null;
+    pending = null;
+  }
+
+  // 选中后在选区右上角浮出插件图标，点它才进入 AI 解析
+  function showIcon(rect, text, context) {
+    closeIcon();
+    pending = { rect, text, context };
+
+    iconHost = document.createElement('div');
+    iconHost.style.cssText = 'position:fixed;top:0;left:0;z-index:2147483647;';
+    const sh = iconHost.attachShadow({ mode: 'open' });
+    const st = document.createElement('style');
+    st.textContent = ICON_CSS;
+    sh.appendChild(st);
+
+    const btn = document.createElement('button');
+    btn.className = 'krh-btn';
+    btn.type = 'button';
+    btn.title = 'AI 解析';
+    btn.setAttribute('aria-label', 'AI 解析');
+    btn.innerHTML = ICON_SVG;
+    btn.addEventListener('mousedown', (e) => e.preventDefault()); // 别让浏览器把选区清掉
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeIcon();
+      openPopup(rect, text, context);
+    });
+    sh.appendChild(btn);
+
+    // 贴在选区右上角；上方/右侧放不下时自动翻转、收边
+    const GAP = 6;
+    let left = rect.right + GAP;
+    let top = rect.top - ICON_SIZE - GAP;
+    if (top < 4) top = rect.bottom + GAP;
+    if (left + ICON_SIZE > window.innerWidth - 4) left = rect.right - ICON_SIZE - GAP;
+    left = Math.max(4, Math.min(left, window.innerWidth - ICON_SIZE - 4));
+    top = Math.max(4, Math.min(top, window.innerHeight - ICON_SIZE - 4));
+    iconHost.style.left = left + 'px';
+    iconHost.style.top = top + 'px';
+
+    document.documentElement.appendChild(iconHost);
   }
 
   function getContext(sel, text) {
@@ -156,7 +225,7 @@
       bindSave(bVocab, bNote, text, context, resp.data);
     };
 
-    // 点按「AI 解析」后才真正发起请求；期间弹窗可能已被关闭/替换，需校验标识符
+    // 已经点过悬浮图标，进来就直接解析；期间弹窗可能已被关闭/替换，需校验标识符
     const startAsk = () => {
       if (myId !== reqId) return;
       bd.textContent = '';
@@ -166,19 +235,10 @@
       chrome.runtime.sendMessage({ type: 'ask', text, context }, done);
     };
 
+    // 缓存命中不消耗 API，直接展示；未命中就直接解析
     const cached = cache.get(text + '||' + context);
-    if (cached) {
-      // 缓存命中不消耗 API，直接展示
-      done({ ok: true, data: cached });
-    } else {
-      // 未命中：先显示确认按钮，避免双击/三击误触浪费 API 调用
-      const wrap = h('div', 'ask-wrap');
-      wrap.appendChild(h('div', 'ask-hint', '确认后才会调用 AI，防止误触'));
-      const bAsk = h('button', 'ask-btn', 'AI 解析');
-      bAsk.onclick = startAsk;
-      wrap.appendChild(bAsk);
-      bd.appendChild(wrap);
-    }
+    if (cached) done({ ok: true, data: cached });
+    else startAsk();
   }
 
   function renderResult(bd, d) {
@@ -421,25 +481,37 @@
     true
   );
 
-  // 选中或双击（双击也会产生选区）后触发
+  // 页面滚动/缩放后选区位置会变，先把图标收起来
+  window.addEventListener('scroll', closeIcon, true);
+  window.addEventListener('resize', closeIcon);
+
+  // 选中或双击（双击也会产生选区）后触发：只在选区右上角浮出插件图标，不发起请求
   document.addEventListener('mouseup', (e) => {
-    if (host && e.composedPath().includes(host)) return;
+    const path = e.composedPath();
+    if (iconHost && path.includes(iconHost)) return;
+    if (host && path.includes(host)) return;
     setTimeout(() => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
       const text = sel.toString().replace(/\s+/g, ' ').trim();
       if (!text || text.length > MAX_LEN || !HANGUL.test(text)) return;
       if (text === lastText && host) return;
+      if (pending && text === pending.text) return;
       const rect = sel.getRangeAt(0).getBoundingClientRect();
       if (!rect.width && !rect.height) return;
-      openPopup(rect, text, getContext(sel, text));
+      showIcon(rect, text, getContext(sel, text));
     }, 10);
   });
 
   document.addEventListener('mousedown', (e) => {
-    if (host && !e.composedPath().includes(host)) closePopup();
+    const path = e.composedPath();
+    if (iconHost && !path.includes(iconHost)) closeIcon();
+    if (host && !path.includes(host)) closePopup();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closePopup();
+    if (e.key === 'Escape') {
+      closeIcon();
+      closePopup();
+    }
   });
 })();
